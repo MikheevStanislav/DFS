@@ -1,10 +1,12 @@
+using System;
 using System.Collections;
+using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting.Dependencies.Sqlite;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
+using Random = UnityEngine.Random;
 
 /// <summary>
 /// This calss generate maze
@@ -35,49 +37,36 @@ public class MazeGenerator : MonoBehaviour
             
         }
         //adj creation
-        for(int i = 0; i < GameManager.Instance.N* GameManager.Instance.N; ++i)
-        {
-            int row = i%GameManager.Instance.N;
-            int col = i/GameManager.Instance.N;
 
-
-            if(col - 1 >= 0)
-                GameManager.Instance.Neigbors[i][2] = i-GameManager.Instance.N;
-            if (row + 1 <  GameManager.Instance.N)
-                GameManager.Instance.Neigbors[i][1] = i + 1;
-            if (col + 1 < GameManager.Instance.N)
-                GameManager.Instance.Neigbors[i][0] = i + GameManager.Instance.N;
-            if (row - 1 >= 0)
-                GameManager.Instance.Neigbors[i][3] = i - 1;
-            
-        }
     }
     //adj checker
-    private void Debugger_for_Matrix()
+    /*private void Debugger_for_Matrix()
     {
         for(int i = 0;i < GameManager.Instance.N*GameManager.Instance.N; ++i)
         {
-            if(GameManager.Instance.Neigbors[i][0] != null)
-                Debug.Log("High" + i + ":" +GameManager.Instance.Neigbors[i][0]);
-            if (GameManager.Instance.Neigbors[i][1] != null)
-                Debug.Log("Right" + i + ":" + GameManager.Instance.Neigbors[i][1]);
-            if (GameManager.Instance.Neigbors[i][2] != null)
-                Debug.Log("Low" + i + ":" + GameManager.Instance.Neigbors[i][2]);
-            if (GameManager.Instance.Neigbors[i][3] != null)
-                Debug.Log("Left" + i + ":" + GameManager.Instance.Neigbors[i][3]);
+            if(GameManager.Instance.neighbors[i][0] != null)
+                Debug.Log("High" + i + ":" +GameManager.Instance.neighbors[i][0]);
+            if (GameManager.Instance.neighbors[i][1] != null)
+                Debug.Log("Right" + i + ":" + GameManager.Instance.neighbors[i][1]);
+            if (GameManager.Instance.neighbors[i][2] != null)
+                Debug.Log("Low" + i + ":" + GameManager.Instance.neighbors[i][2]);
+            if (GameManager.Instance.neighbors[i][3] != null)
+                Debug.Log("Left" + i + ":" + GameManager.Instance.neighbors[i][3]);
 
         }
-    }
+    }*/
     //backtracking script for deleting the walls, and making the maze
     private void MazeGeneratorFun(int i)
     {
         GameObject cell = GameManager.Instance.cells[i];
         GameManager.Instance.flags[i] = true;
-        int dir = GetRanddir(cell.name);
+        int dir = GetRanddir(i);
+        int[] neighbors = Neigbors(i);
         while (dir != -1)
         {
-            Debug.Log("randVal:" + dir);
-            int j = GameManager.Instance.Neigbors[i][dir];
+            //Debug.Log("randVal:" + dir);
+
+            int j = neighbors[dir];
             Transform[] childObjects1 = cell.GetComponentsInChildren<Transform>();
             Transform walltoremove1 = childObjects1[dir+1];
             Debug.Log(walltoremove1.name);
@@ -92,24 +81,44 @@ public class MazeGenerator : MonoBehaviour
             MazeGeneratorFun(j);
 
 
-            dir = GetRanddir(cell.name);  
+            dir = GetRanddir(i);  
         }
     }
 
-    private int GetRanddir(string name)
+    private void MazeGeneratorFUn(int start)
+    {
+        System.Collections.Generic.Stack<int> stack = new Stack<int>();
+        stack.Push(start);
+        GameManager.Instance.flags[start] = true;
+        while(stack.Count > 0)
+        {
+            
+            int s = stack.Pop();
+            while(GameManager.Instance)
+
+
+            if (!GameManager.Instance.flags[s])
+                GameManager.Instance.flags[s] = true;
+            int[] neigbors = Neigbors(s);
+            foreach(int x in neigbors)
+                if (!GameManager.Instance.flags[x])
+                    stack.Push(x);
+
+        }
+    }
+
+    private int GetRanddir(int j)
     {
         
-        int j = nameToInt(name);
         GameObject cell = GameManager.Instance.cells[j];
-        
+        int[] neighbors = Neigbors(j);
         List<int> list = new List<int>();
         for (int i = 0; i < 4; i++)
         {
-            GameObject neighbor = GameManager.Instance.cells[GameManager.Instance.Neigbors[j][i]];
-            if (neighbor != null && !GameManager.Instance.flags[(nameToInt(neighbor.name))])
+            if (neighbors[i] != -1 && !GameManager.Instance.flags[neighbors[i]])
             {
                 list.Add(i);
-            }
+            } 
         }
         if (list.Count == 0)
         {
@@ -124,6 +133,26 @@ public class MazeGenerator : MonoBehaviour
     {
         string[] strings = name.Split(' ');
         return (int.Parse(strings[1]));
+    }
+
+    public int[] Neigbors(int index)
+    {
+        int[] neigbors = new int[4];
+        for (int i = 0; i < neigbors.Length; ++i)
+            neigbors[i] = -1;
+
+        int row = index % GameManager.Instance.N;
+        int col = index / GameManager.Instance.N;
+        if (col + 1 < GameManager.Instance.N)
+            neigbors[0] = index + GameManager.Instance.N;
+        if (row + 1 < GameManager.Instance.N)
+            neigbors[1] = index + 1;
+        if (col - 1 >= 0)
+            neigbors[2] = index - GameManager.Instance.N;
+        if (row - 1 >= 0)
+            neigbors[3] = index - 1;
+
+        return (neigbors);
     }
 }
 
